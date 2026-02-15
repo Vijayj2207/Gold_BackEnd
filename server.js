@@ -1,22 +1,19 @@
-require("dotenv").config();
+const express = require("express");
+const { connectDB } = require("./config/db");
 
-const app = require("./app");
-const { connectDB, sequelize } = require("./config/db");
+const app = express();
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 
 const startServer = async () => {
   try {
     await connectDB();
 
-    await sequelize.sync();
-
     app.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);
     });
-
-  } catch (error) {
-    console.error("Server start failed:", error);
+  } catch (err) {
+    console.error("Server start failed:", err);
   }
 };
 
