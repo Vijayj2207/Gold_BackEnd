@@ -1,22 +1,13 @@
 const { Sequelize } = require("sequelize");
 
-const sequelize = new Sequelize(
-  process.env.MYSQLDATABASE,
-  process.env.MYSQLUSER,
-  process.env.MYSQLPASSWORD,
-  {
-    host: process.env.MYSQLHOST,
-    port: process.env.MYSQLPORT,
-    dialect: "mysql",
-    logging: false,
-  }
-);
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: "mysql",
+  logging: false,
+});
 
 const connectDB = async () => {
   try {
-    console.log("HOST:", process.env.MYSQLHOST);
-    console.log("DB:", process.env.MYSQLDATABASE);
-
+    console.log("DATABASE_URL:", process.env.DATABASE_URL);
     await sequelize.authenticate();
     console.log("✅ Database connected successfully");
   } catch (error) {
