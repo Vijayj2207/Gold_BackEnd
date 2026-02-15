@@ -7,7 +7,7 @@ const app = express();
 
 // ✅ CORS Configuration
 app.use(cors({
-  origin: "*", // Allow all for now
+  origin: "*",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
@@ -17,9 +17,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Health check route
+// ✅ Health check routes - CRITICAL for Railway
 app.get("/", (req, res) => {
-  res.json({ 
+  res.status(200).json({ 
     message: "Gold Vault API is running!",
     status: "healthy",
     timestamp: new Date().toISOString()
@@ -27,12 +27,12 @@ app.get("/", (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+  res.status(200).json({ status: "ok" });
 });
 
 // ✅ Import and use routes
 try {
-  const userRoutes = require("./routes/user.routes");
+  const userRoutes = require("./routes/userRoutes");
   app.use("/api/users", userRoutes);
   console.log("✅ Routes loaded successfully");
 } catch (error) {
@@ -64,22 +64,35 @@ const startServer = async () => {
     console.log("📍 Port:", PORT);
     console.log("🌍 Environment:", process.env.NODE_ENV || "development");
     
-    // Try to connect to database
+    // Connect to database first
     await connectDB();
     
-    // Start listening
-    app.listen(PORT, "0.0.0.0", () => {
+    // CRITICAL: Bind to 0.0.0.0 for Railway
+    const server = app.listen(PORT, "0.0.0.0", () => {
       console.log(`✅ Server running on port ${PORT}`);
+      console.log(`✅ Server is listening on 0.0.0.0:${PORT}`);
+    });
+
+    // Handle graceful shutdown
+    process.on("SIGTERM", () => {
+      console.log("⚠️ SIGTERM received, shutting down gracefully");
+      server.close(() => {
+        console.log("✅ Server closed");
+        process.exit(0);
+      });
+    });
+
+    process.on("SIGINT", () => {
+      console.log("⚠️ SIGINT received, shutting down gracefully");
+      server.close(() => {
+        console.log("✅ Server closed");
+        process.exit(0);
+      });
     });
     
   } catch (err) {
     console.error("❌ Server start failed:", err);
-    console.error("Retrying in 5 seconds...");
-    
-    // Retry connection after 5 seconds instead of exiting
-    setTimeout(() => {
-      startServer();
-    }, 5000);
+    process.exit(1);
   }
 };
 
