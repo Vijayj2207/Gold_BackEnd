@@ -32,7 +32,7 @@ app.get("/health", (req, res) => {
 
 // ✅ Import and use routes
 try {
-  const userRoutes = require("./routes/userRoutes");
+  const userRoutes = require("./routes/user.routes");
   app.use("/api/users", userRoutes);
   console.log("✅ Routes loaded successfully");
 } catch (error) {
