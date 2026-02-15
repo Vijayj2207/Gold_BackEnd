@@ -1,5 +1,4 @@
 const { Sequelize } = require("sequelize");
-require("dotenv").config();
 
 const sequelize = new Sequelize(
   process.env.MYSQLDATABASE,
@@ -15,10 +14,13 @@ const sequelize = new Sequelize(
 
 const connectDB = async () => {
   try {
+    console.log("HOST:", process.env.MYSQLHOST);
+    console.log("DB:", process.env.MYSQLDATABASE);
+
     await sequelize.authenticate();
     console.log("✅ Database connected successfully");
   } catch (error) {
-    console.error("❌ Unable to connect to database:", error.message);
+    console.error("❌ Unable to connect to database:", error);
     process.exit(1);
   }
 };
