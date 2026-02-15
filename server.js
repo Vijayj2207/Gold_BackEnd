@@ -17,7 +17,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Health check routes - CRITICAL for Railway
+// ✅ Health check routes - MUST respond quickly
 app.get("/", (req, res) => {
   res.status(200).json({ 
     message: "Gold Vault API is running!",
@@ -51,8 +51,7 @@ app.use("*", (req, res) => {
 app.use((err, req, res, next) => {
   console.error("Error:", err);
   res.status(500).json({ 
-    message: "Internal server error",
-    error: process.env.NODE_ENV === "development" ? err.message : undefined
+    message: "Internal server error"
   });
 });
 
@@ -64,31 +63,43 @@ const startServer = async () => {
     console.log("📍 Port:", PORT);
     console.log("🌍 Environment:", process.env.NODE_ENV || "development");
     
-    // Connect to database first
-    await connectDB();
-    
-    // CRITICAL: Bind to 0.0.0.0 for Railway
+    // Start server FIRST, then connect to DB
     const server = app.listen(PORT, "0.0.0.0", () => {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`✅ Server is listening on 0.0.0.0:${PORT}`);
+      
+      // Connect to database AFTER server starts
+      connectDB()
+        .then(() => {
+          console.log("✅ Database connection completed");
+        })
+        .catch((err) => {
+          console.error("⚠️ Database connection failed but server continues:", err.message);
+        });
     });
+
+    // Keep-alive to prevent idle timeout
+    setInterval(() => {
+      console.log("💓 Server heartbeat");
+    }, 30000); // every 30 seconds
 
     // Handle graceful shutdown
-    process.on("SIGTERM", () => {
-      console.log("⚠️ SIGTERM received, shutting down gracefully");
+    const shutdown = (signal) => {
+      console.log(`⚠️ ${signal} received, shutting down gracefully`);
       server.close(() => {
         console.log("✅ Server closed");
         process.exit(0);
       });
-    });
+      
+      // Force shutdown after 10 seconds
+      setTimeout(() => {
+        console.error("⚠️ Forced shutdown");
+        process.exit(1);
+      }, 10000);
+    };
 
-    process.on("SIGINT", () => {
-      console.log("⚠️ SIGINT received, shutting down gracefully");
-      server.close(() => {
-        console.log("✅ Server closed");
-        process.exit(0);
-      });
-    });
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT", () => shutdown("SIGINT"));
     
   } catch (err) {
     console.error("❌ Server start failed:", err);
@@ -98,11 +109,11 @@ const startServer = async () => {
 
 startServer();
 
-// Handle uncaught errors
+// Handle uncaught errors but don't exit
 process.on("uncaughtException", (err) => {
-  console.error("Uncaught Exception:", err);
+  console.error("❌ Uncaught Exception:", err);
 });
 
 process.on("unhandledRejection", (err) => {
-  console.error("Unhandled Rejection:", err);
+  console.error("❌ Unhandled Rejection:", err);
 });
