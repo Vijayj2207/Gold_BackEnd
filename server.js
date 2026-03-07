@@ -32,7 +32,9 @@ const customerRoutes = require("./routes/customer.routes"); // ✅ removed .ts
 const goldRateRoutes = require("./routes/goldRate.routes"); // ✅ removed .js
 const depositRoutes = require("./routes/deposit.routes"); // ✅ removed .js
 const paymentRoutes = require("./routes/payment.route"); // ✅ fixed name
+const dashboardRoutes = require("./routes/dashboard.routes"); // ✅ added dashboard routes
 
+app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/gold-rate", goldRateRoutes);
