@@ -28,10 +28,10 @@ app.use(express.urlencoded({ extended: true }));
    ROUTES
 ========================= */
 const userRoutes = require("./routes/user.routes");
-const customerRoutes = require("./routes/customer.routes.js"); // ✅ removed .ts
+const customerRoutes = require("./routes/customer.routes"); // ✅ removed .ts
 const goldRateRoutes = require("./routes/goldRate.routes"); // ✅ removed .js
 const depositRoutes = require("./routes/deposit.routes"); // ✅ removed .js
-const paymentRoutes = require("./routes/payment.route.js"); // ✅ fixed name
+const paymentRoutes = require("./routes/payment.route"); // ✅ fixed name
 
 app.use("/api/users", userRoutes);
 app.use("/api/customers", customerRoutes);
