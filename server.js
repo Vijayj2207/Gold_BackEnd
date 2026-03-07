@@ -8,14 +8,15 @@ const app = express();
 /* =========================
    CORS
 ========================= */
-app.use(
-  cors({
-    origin: "*",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }),
-);
+const corsOptions = {
+  origin: "*",
+  credentials: false, // ✅ must be false when origin is "*"
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // ✅ handle preflight
 
 /* =========================
    BODY PARSERS
@@ -27,19 +28,16 @@ app.use(express.urlencoded({ extended: true }));
    ROUTES
 ========================= */
 const userRoutes = require("./routes/user.routes");
-const customerRoutes = require("./routes/customer.routes.ts");
-const goldRateRoutes = require("./routes/goldRate.routes.js");
-const depositRoutes = require("./routes/deposit.routes.js");
-const paymentRoutes = require("./routes/payment.route.js");
-// outes");
-// const rateRoutes = require("./routes/rate.routes");
+const customerRoutes = require("./routes/customer.routes.js"); // ✅ removed .ts
+const goldRateRoutes = require("./routes/goldRate.routes"); // ✅ removed .js
+const depositRoutes = require("./routes/deposit.routes"); // ✅ removed .js
+const paymentRoutes = require("./routes/payment.route.js"); // ✅ fixed name
 
 app.use("/api/users", userRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/gold-rate", goldRateRoutes);
 app.use("/api/deposits", depositRoutes);
 app.use("/api/payments", paymentRoutes);
-// app.use("/api/rates", rateRoutes);
 
 console.log("✅ Routes registered successfully");
 
