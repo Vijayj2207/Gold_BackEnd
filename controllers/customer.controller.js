@@ -1,5 +1,5 @@
 const customerService = require("../services/customer.service.js");
-const cloudinary = require("../config/cloudinary.ts");
+const cloudinary = require("../config/cloudinary.js"); // ← import the configured Cloudinary instance
 
 // ── Create customer ───────────────────────────────────────────────────────────
 exports.createCustomer = async (req, res) => {
