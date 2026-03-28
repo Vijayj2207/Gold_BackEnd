@@ -57,7 +57,7 @@ exports.getByUid = async (req, res) => {
 exports.getByCustomer = async (req, res) => {
   try {
     const deposits = await depositService.getDepositsByCustomer(
-      req.params.customerId,
+      req.params.customerId
     );
     res.json(deposits);
   } catch (err) {
@@ -74,6 +74,24 @@ exports.remove = async (req, res) => {
     res.json({ message: "Deposit deleted successfully" });
   } catch (err) {
     res.status(404).json({ message: err.message });
+  }
+};
+
+/* ===========================
+   CLOSE DEPOSIT (US12)
+=========================== */
+exports.close = async (req, res) => {
+  try {
+    const result = await depositService.closeDeposit(req.params.id);
+    res.json({
+      message: "Deposit closed successfully",
+      deposit: result,
+    });
+  } catch (err) {
+    const status =
+      err.message === "Deposit not found"        ? 404 :
+      err.message === "Deposit is already closed" ? 409 : 400;
+    res.status(status).json({ message: err.message });
   }
 };
 

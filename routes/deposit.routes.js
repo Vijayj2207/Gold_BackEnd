@@ -4,7 +4,7 @@ const depositController = require("../controllers/deposit.controller");
 
 // GET  /api/deposits/stats
 router.get("/stats", depositController.getStats);
-
+router.patch("/:id/close", depositController.close);
 // GET  /api/deposits
 router.get("/", depositController.getAll);
 
