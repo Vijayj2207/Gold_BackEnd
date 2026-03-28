@@ -1,6 +1,7 @@
 const Payment = require("../models/payments.model.js");
 
-const Deposit = require("../models/deposit.model");
+const GoldRate = require("../models/goldRate.model.js");
+
 
 exports.createPayment = async (data) => {
   const { deposit_id, customer_id, amount, payment_mode, paid_at } = data;
@@ -13,28 +14,49 @@ exports.createPayment = async (data) => {
   }
   if (amount <= 0) throw new Error("Amount must be positive");
 
-  // Force numeric — frontend may send strings
-  const depositIdNum = Number(deposit_id);
-  const amountNum    = parseFloat(amount);
+  const amountNum = parseFloat(amount);
 
-  const deposit = await Deposit.getById(depositIdNum);
+  // ── Get date in IST (UTC+5:30) ──────────────────────────────
+  // Frontend sends "2026-03-28T00:00:00.000Z" which is IST midnight
+  // Converting via toISOString() gives "2026-03-27" (wrong — UTC date)
+  // Instead: offset by +5:30 before extracting the date string
+  const getISTDateString = (dateInput) => {
+    const d = dateInput ? new Date(dateInput) : new Date();
+    // Add 5 hours 30 minutes to get IST
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(d.getTime() + istOffset);
+    return istDate.toISOString().split("T")[0]; // "YYYY-MM-DD" in IST
+  };
 
-  // Add this debug temporarily to confirm what comes back:
-  console.log("deposit row:", deposit);
-  console.log("gold_rate_at_time:", deposit?.gold_rate_at_time);
+  const paymentDate = getISTDateString(paid_at);
 
-  if (!deposit) throw new Error("Deposit not found");
-  if (deposit.status === "closed") throw new Error("Deposit is closed");
+  console.log("paid_at received:", paid_at);
+  console.log("paymentDate in IST:", paymentDate); // should be "2026-03-28"
 
-  const rate = parseFloat(deposit.gold_rate_at_time);
-  if (!rate || rate <= 0) throw new Error("Invalid gold rate on deposit");
+  const { Op } = require("sequelize");
 
+  let goldRateRow = await GoldRate.findOne({
+    where: { date: paymentDate },
+  });
+
+  if (!goldRateRow) {
+    goldRateRow = await GoldRate.findOne({
+      where: { date: { [Op.lte]: paymentDate } },
+      order: [["date", "DESC"]],
+    });
+  }
+
+  if (!goldRateRow) {
+    throw new Error(`No gold rate found for ${paymentDate}. Please set today's gold rate first.`);
+  }
+
+  const rate = parseFloat(goldRateRow.rate);
   const gold_weight_grams = (amountNum / rate).toFixed(4);
 
-  console.log(`amount=${amountNum}, rate=${rate}, grams=${gold_weight_grams}`);
+  console.log("Rate used:", rate, "| Grams:", gold_weight_grams);
 
   const id = await Payment.create({
-    deposit_id:        depositIdNum,
+    deposit_id:        Number(deposit_id),
     customer_id:       Number(customer_id),
     amount:            amountNum,
     payment_mode,
@@ -42,8 +64,19 @@ exports.createPayment = async (data) => {
     paid_at:           paid_at || new Date(),
   });
 
-  return { id, deposit_id: depositIdNum, customer_id, amount: amountNum, payment_mode, gold_weight_grams };
+  return {
+    id,
+    deposit_id,
+    customer_id,
+    amount:            amountNum,
+    payment_mode,
+    gold_weight_grams,
+    rate_used:         rate,
+  };
 };
+
+
+
 
 exports.getAllPayments    = async () => await Payment.getAll();
 exports.getPaymentById   = async (id) => {
